@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ojs-primary: #0056A1;
+  --ojs-primary-dark: #003049;
+  --ojs-secondary: #003d5c;
+  --ojs-accent: #0088cc;
+  --ojs-text: #333333;
+  --ojs-border: #E5E7EB;
+  --ojs-bg: #F3F4F6;
+  --ojs-sidebar-bg: #E9ECEF;
+  --ojs-white: #ffffff;
+}
+
+body {
+  color: var(--ojs-text);
+  background: var(--ojs-bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .ojs-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  .ojs-button-primary {
+    @apply bg-[var(--ojs-primary)] text-white px-4 py-2 rounded hover:bg-[var(--ojs-secondary)] transition-colors;
+  }
+  
+  .ojs-button-secondary {
+    @apply bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition-colors;
+  }
+  
+  .ojs-card {
+    @apply bg-white border border-[var(--ojs-border)] rounded-lg shadow-sm p-6;
+  }
+}
+
