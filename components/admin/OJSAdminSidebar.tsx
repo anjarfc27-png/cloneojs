@@ -10,6 +10,20 @@ import {
   Settings,
   FileText,
   Calendar,
+  Mail,
+  Bell,
+  BarChart3,
+  Server,
+  Navigation,
+  Clock,
+  Key,
+  Puzzle,
+  Globe,
+  Database,
+  Wrench,
+  Download,
+  Upload,
+  Activity,
 } from 'lucide-react'
 
 interface MenuGroup {
@@ -25,13 +39,41 @@ interface MenuItem {
 
 const menuGroups: MenuGroup[] = [
   {
+    title: 'Main',
     items: [
       { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    ],
+  },
+  {
+    title: 'Management',
+    items: [
       { name: 'Manajemen Pengguna', href: '/admin/users', icon: Users },
       { name: 'Manajemen Jurnal', href: '/admin/journals', icon: BookOpen },
       { name: 'Manajemen Isu', href: '/admin/issues', icon: Calendar },
+    ],
+  },
+  {
+    title: 'Settings',
+    items: [
       { name: 'Pengaturan Situs', href: '/admin/settings', icon: Settings },
-      { name: 'Log Aktivitas', href: '/admin/activity-log', icon: FileText },
+      { name: 'Email Templates', href: '/admin/email-templates', icon: Mail },
+      { name: 'Announcements', href: '/admin/announcements', icon: Bell },
+      { name: 'Navigation Menus', href: '/admin/navigation', icon: Navigation },
+      { name: 'Languages', href: '/admin/languages', icon: Globe },
+    ],
+  },
+  {
+    title: 'System',
+    items: [
+      { name: 'System Information', href: '/admin/system/information', icon: Server },
+      { name: 'Statistics & Reports', href: '/admin/statistics', icon: BarChart3 },
+      { name: 'Activity Log', href: '/admin/activity-log', icon: FileText },
+      { name: 'Scheduled Tasks', href: '/admin/tasks', icon: Clock },
+      { name: 'API Keys', href: '/admin/api-keys', icon: Key },
+      { name: 'Plugins', href: '/admin/plugins', icon: Puzzle },
+      { name: 'System Health', href: '/admin/health', icon: Activity },
+      { name: 'Data Maintenance', href: '/admin/maintenance', icon: Wrench },
+      { name: 'Backup & Restore', href: '/admin/backup', icon: Database },
     ],
   },
 ]

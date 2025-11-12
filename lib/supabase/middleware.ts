@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { applySecurityHeaders } from '@/lib/security/headers'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -53,9 +54,9 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
+  const pathname = request.nextUrl.pathname
+
   try {
-    const pathname = request.nextUrl.pathname
-    
     // Get user - try once
     let {
       data: { user },
@@ -71,20 +72,56 @@ export async function updateSession(request: NextRequest) {
     // Don't redirect immediately - let the page handle it with retry logic
     if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/admin'))) {
       // Don't redirect here - let the page/layout handle it
+      // Apply security headers before returning
+      applySecurityHeaders(supabaseResponse, {
+        enableCSP: true,
+        enableHSTS: process.env.NODE_ENV === 'production',
+        enableXSSProtection: true,
+      })
       return supabaseResponse
     }
 
-    // Rule 1: If user is logged in and trying to access login/register, redirect to dashboard
+    // Rule 1: If user is logged in and trying to access login/register, check role first
     if (user) {
+      // Check if user is super admin (quick check in middleware)
+      let isSuperAdmin = false
+      try {
+        const { data: tenantUsers } = await supabase
+          .from('tenant_users')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .eq('role', 'super_admin')
+          .limit(1)
+        
+        isSuperAdmin = tenantUsers && tenantUsers.length > 0
+      } catch (error) {
+        // Ignore error - let layout handle it
+        console.log('[MIDDLEWARE] Could not check super admin status, letting layout handle it')
+      }
+
+      // If user is logged in and trying to access login/register, redirect based on role
       if (pathname === '/login' || pathname.startsWith('/login/') || 
           pathname === '/register' || pathname.startsWith('/register/')) {
         const url = request.nextUrl.clone()
-        url.pathname = '/dashboard'
-        return NextResponse.redirect(url)
+        url.pathname = isSuperAdmin ? '/admin/dashboard' : '/dashboard'
+        const redirectResponse = NextResponse.redirect(url)
+        applySecurityHeaders(redirectResponse, {
+          enableCSP: true,
+          enableHSTS: process.env.NODE_ENV === 'production',
+          enableXSSProtection: true,
+        })
+        return redirectResponse
       }
+
       // Allow access to dashboard and admin if user is logged in
       // Layout will handle role-based access control
       if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+        applySecurityHeaders(supabaseResponse, {
+          enableCSP: true,
+          enableHSTS: process.env.NODE_ENV === 'production',
+          enableXSSProtection: true,
+        })
         return supabaseResponse
       }
     }
@@ -109,6 +146,21 @@ export async function updateSession(request: NextRequest) {
   //    return myNewResponse
   // If this is not done, you may be causing the browser and server to go out of
   // sync and terminate the user's session prematurely.
+
+  // Apply security headers without modifying cookies
+  // Skip security headers for API routes and static files
+  if (
+    !pathname.startsWith('/api/') &&
+    !pathname.startsWith('/_next/') &&
+    !pathname.startsWith('/static/') &&
+    !pathname.match(/\.(ico|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot)$/)
+  ) {
+    applySecurityHeaders(supabaseResponse, {
+      enableCSP: true,
+      enableHSTS: process.env.NODE_ENV === 'production',
+      enableXSSProtection: true,
+    })
+  }
 
   return supabaseResponse
 }

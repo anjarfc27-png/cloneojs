@@ -56,14 +56,47 @@ export default function LoginForm() {
       // Verify session is accessible
       const { data: { session: verifySession } } = await supabase.auth.getSession()
       if (verifySession) {
-        console.log('[LOGIN] ✅ Session verified, redirecting...')
+        console.log('[LOGIN] ✅ Session verified, checking user role...')
       } else {
         console.warn('[LOGIN] ⚠️ Session not immediately available, redirecting anyway...')
       }
       
-      // Use window.location.href for reliable redirect with session
-      console.log('[LOGIN] Redirecting to /dashboard')
-      window.location.href = '/dashboard'
+      // Check if user is super admin (handle multiple entries)
+      console.log('[LOGIN] Checking user role...')
+      const { data: tenantUsers, error: roleError } = await supabase
+        .from('tenant_users')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .eq('is_active', true)
+        .eq('role', 'super_admin')
+        .limit(1)
+
+      if (roleError) {
+        console.log('[LOGIN] Error checking role (might not be super admin):', roleError.message)
+      }
+
+      // Redirect based on role (check if any super_admin role exists)
+      if (tenantUsers && tenantUsers.length > 0) {
+        console.log('[LOGIN] ✅ User is super admin, redirecting to /admin/dashboard')
+        console.log('[LOGIN] Waiting 300ms before redirect to ensure cookie sync...')
+        // Add delay to ensure cookie is fully set and available on server-side
+        await new Promise(resolve => setTimeout(resolve, 300))
+        
+        // Verify session one more time before redirect
+        const { data: { session: finalSession } } = await supabase.auth.getSession()
+        if (finalSession && finalSession.user) {
+          console.log('[LOGIN] ✅ Final session verified, redirecting...')
+          // Use window.location.href for full page reload to ensure server sees the cookie
+          window.location.href = '/admin/dashboard'
+        } else {
+          console.warn('[LOGIN] ⚠️ Session not available, using router.push as fallback')
+          router.push('/admin/dashboard')
+        }
+      } else {
+        console.log('[LOGIN] User is not super admin, redirecting to /dashboard')
+        await new Promise(resolve => setTimeout(resolve, 200))
+        window.location.href = '/dashboard'
+      }
       
     } catch (error: any) {
       console.error('[LOGIN] ❌ Unexpected error during login:', error)

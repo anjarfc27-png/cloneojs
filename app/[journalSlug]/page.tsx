@@ -15,10 +15,11 @@ export default async function JournalPage({
   
   // Get journal by id or try to find by slug
   let journal: any = null
+  let error: any = null
   
   // Try to get by ID first (UUID format)
   if (params.journalSlug.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-    const { data } = await supabase
+    const { data, error: journalError } = await supabase
       .from('journals')
       .select(`
         *,
@@ -30,18 +31,27 @@ export default async function JournalPage({
       `)
       .eq('id', params.journalSlug)
       .eq('is_active', true)
-      .single()
-    journal = data
+      .maybeSingle()
+    
+    if (journalError) {
+      console.error('Error fetching journal by ID:', journalError)
+      error = journalError
+    } else {
+      journal = data
+    }
   } else {
     // Try to get by tenant slug
-    const { data: tenant } = await supabase
+    const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .select('id')
       .eq('slug', params.journalSlug)
-      .single()
+      .maybeSingle()
     
-    if (tenant) {
-      const { data } = await supabase
+    if (tenantError) {
+      console.error('Error fetching tenant by slug:', tenantError)
+      error = tenantError
+    } else if (tenant) {
+      const { data: journalData, error: journalError } = await supabase
         .from('journals')
         .select(`
           *,
@@ -54,12 +64,19 @@ export default async function JournalPage({
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
         .limit(1)
-        .single()
-      journal = data
+        .maybeSingle()
+      
+      if (journalError) {
+        console.error('Error fetching journal by tenant:', journalError)
+        error = journalError
+      } else {
+        journal = journalData
+      }
     }
   }
 
   if (!journal) {
+    console.log(`Journal not found for slug: ${params.journalSlug}`)
     notFound()
   }
 
@@ -79,15 +96,17 @@ export default async function JournalPage({
     .order('published_date', { ascending: false })
     .limit(10)
 
-  // Get current issue
-  const { data: currentIssue } = await supabase
+  // Get current issue (may not exist, so don't use .single())
+  const { data: currentIssueData } = await supabase
     .from('issues')
     .select('*')
     .eq('journal_id', journal.id)
     .eq('is_published', true)
     .order('published_date', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
+  
+  const currentIssue = currentIssueData || null
 
   // Get sections
   const { data: sections } = await supabase
@@ -99,7 +118,7 @@ export default async function JournalPage({
 
   return (
     <div className="min-h-screen bg-[var(--ojs-bg)]">
-      <JournalHeader journal={journal} />
+      <JournalHeader journal={journal} journalSlug={params.journalSlug} />
       
       <div className="ojs-container py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -120,7 +139,7 @@ export default async function JournalPage({
 
             {/* Current Issue */}
             {currentIssue && (
-              <CurrentIssue issue={currentIssue} journalId={journal.id} />
+              <CurrentIssue issue={currentIssue} journalSlug={params.journalSlug} />
             )}
 
             {/* Latest Articles */}
@@ -132,6 +151,7 @@ export default async function JournalPage({
             <JournalSidebar 
               journal={journal} 
               sections={sections || []}
+              journalSlug={params.journalSlug}
             />
           </div>
         </div>

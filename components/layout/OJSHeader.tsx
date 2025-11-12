@@ -51,7 +51,7 @@ export default function OJSHeader({ user, journalName = 'Jurnal', onMenuToggle, 
               {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           )}
-          <h1 className="text-lg font-semibold">OJS3 {journalName}</h1>
+          <h1 className="text-lg font-semibold">OJS3 Jurnal</h1>
         </div>
 
         {/* Right: Notifications and User */}

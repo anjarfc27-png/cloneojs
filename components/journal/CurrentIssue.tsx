@@ -11,10 +11,10 @@ interface Issue {
 
 interface CurrentIssueProps {
   issue: Issue
-  journalId: string
+  journalSlug: string
 }
 
-export default function CurrentIssue({ issue, journalId }: CurrentIssueProps) {
+export default function CurrentIssue({ issue, journalSlug }: CurrentIssueProps) {
   return (
     <div className="ojs-card mb-6 bg-gradient-to-r from-[var(--ojs-primary)] to-[var(--ojs-secondary)] text-white">
       <h2 className="text-2xl font-bold mb-4">Issue Terkini</h2>
@@ -32,12 +32,20 @@ export default function CurrentIssue({ issue, journalId }: CurrentIssueProps) {
           </p>
         )}
       </div>
-      <Link
-        href={`/journal/${journalId}/issue/${issue.id}`}
-        className="inline-block bg-white text-[var(--ojs-primary)] px-4 py-2 rounded hover:bg-gray-100 transition-colors"
-      >
-        Lihat Issue Ini
-      </Link>
+      <div className="flex items-center gap-3">
+        <Link
+          href={`/${journalSlug}/issue/${issue.id}`}
+          className="inline-block bg-white text-[var(--ojs-primary)] px-4 py-2 rounded hover:bg-gray-100 transition-colors"
+        >
+          Lihat Issue Ini
+        </Link>
+        <Link
+          href={`/${journalSlug}/issues`}
+          className="inline-block bg-white/20 text-white px-4 py-2 rounded hover:bg-white/30 transition-colors"
+        >
+          Lihat Semua Issues
+        </Link>
+      </div>
     </div>
   )
 }

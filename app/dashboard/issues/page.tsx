@@ -3,75 +3,63 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Plus } from 'lucide-react'
-import { usePagination } from '@/hooks/usePagination'
-import IssueTable, { Issue } from '@/components/admin/IssueTable'
-import IssueFormModal from '@/components/admin/IssueFormModal'
-import PageHeader from '@/components/shared/PageHeader'
-import SearchBar from '@/components/shared/SearchBar'
-import LoadingSpinner from '@/components/shared/LoadingSpinner'
-import Pagination from '@/components/shared/Pagination'
-import ErrorAlert from '@/components/shared/ErrorAlert'
-import ContentCard from '@/components/shared/ContentCard'
-import Tabs from '@/components/shared/Tabs'
-import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api/client'
-
-interface Journal {
-  id: string
-  title: string
-}
+import IssuesClientPage from './page-client'
 
 export default function DashboardIssuesPage() {
   const router = useRouter()
-  const [search, setSearch] = useState('')
-  const [activeTab, setActiveTab] = useState<'future' | 'back'>('future')
-  const { page, limit, goToPage } = usePagination({ initialPage: 1, initialLimit: 10 })
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingIssue, setEditingIssue] = useState<Issue | null>(null)
-  const [issues, setIssues] = useState<Issue[]>([])
-  const [journals, setJournals] = useState<Journal[]>([])
-  const [currentJournalId, setCurrentJournalId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [total, setTotal] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [userData, setUserData] = useState<{user: any, journal: any} | null>(null)
 
-  // Check if user is super admin and redirect to admin issues if so
   useEffect(() => {
-    async function checkRole() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/login')
-        return
-      }
+    async function checkAuthorization() {
+      try {
+        const supabase = createClient()
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        
+        if (authError || !user) {
+          console.log('[ISSUES PAGE] No user found, redirecting to login')
+          router.push('/login')
+          return
+        }
 
-      // Check if user is super admin
-      const { data: tenantUser } = await supabase
-        .from('tenant_users')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .eq('role', 'super_admin')
-        .single()
+        // Check if user is super admin
+        const { data: tenantUser } = await supabase
+          .from('tenant_users')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .eq('role', 'super_admin')
+          .single()
 
-      if (tenantUser) {
-        // Redirect super admin to admin issues page
-        router.push('/admin/issues')
-        return
-      }
+        if (tenantUser) {
+          // Redirect super admin to admin issues page
+          router.push('/admin/issues')
+          return
+        }
 
-      // Get user's journal
-      const { data: userJournal } = await supabase
-        .from('tenant_users')
-        .select('tenant_id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .single()
+        // Get user's tenant info
+        const { data: userJournal } = await supabase
+          .from('tenant_users')
+          .select('tenant_id, role')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .single()
 
-      if (userJournal) {
+        if (!userJournal) {
+          setError('Anda tidak memiliki akses ke jurnal manapun.')
+          setLoading(false)
+          return
+        }
+
+        // Check if user has proper role for managing issues
+        const allowedRoles = ['editor', 'section_editor']
+        if (!allowedRoles.includes(userJournal.role)) {
+          setError('Anda tidak memiliki izin untuk mengelola isu. Role yang diizinkan: editor, section_editor.')
+          setLoading(false)
+          return
+        }
+
         // Get journal for this tenant
         const { data: journal } = await supabase
           .from('journals')
@@ -81,189 +69,51 @@ export default function DashboardIssuesPage() {
           .limit(1)
           .single()
 
-        if (journal) {
-          setCurrentJournalId(journal.id)
-          setJournals([journal])
+        if (!journal) {
+          setError('Jurnal tidak ditemukan untuk tenant Anda.')
+          setLoading(false)
+          return
         }
+
+        console.log('[ISSUES PAGE] User authorized, journal:', journal.id)
+        setUserData({ user, journal })
+        setLoading(false)
+        
+      } catch (error: any) {
+        console.error('[ISSUES PAGE] Error checking authorization:', error)
+        setError('Terjadi kesalahan saat memverifikasi akses: ' + error.message)
+        setLoading(false)
       }
     }
 
-    checkRole()
+    checkAuthorization()
   }, [router])
 
-  // Fetch issues
-  const fetchIssues = async () => {
-    if (!currentJournalId) return
-
-    setLoading(true)
-    setError(null)
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        status: activeTab,
-        journalId: currentJournalId,
-        ...(search && { search }),
-      })
-      
-      const result = await apiGet<{
-        issues: Issue[]
-        total: number
-        page: number
-        pageSize: number
-        totalPages: number
-      }>(`/api/admin/issues?${params}`)
-      
-      setIssues(result.issues || [])
-      setTotal(result.total || 0)
-      setTotalPages(result.totalPages || 0)
-    } catch (error: any) {
-      setError(error.message || 'Gagal memuat data isu')
-      setIssues([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (currentJournalId) {
-      fetchIssues()
-    }
-  }, [page, limit, activeTab, search, currentJournalId])
-
-  const handleEdit = (issue: Issue) => {
-    setEditingIssue(issue)
-    setIsModalOpen(true)
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus isu ini?')) {
-      return
-    }
-
-    try {
-      await apiDelete(`/api/admin/issues/${id}`)
-      fetchIssues()
-    } catch (error: any) {
-      alert(error.message || 'Gagal menghapus isu')
-    }
-  }
-
-  const handlePublish = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin mempublikasikan isu ini?')) {
-      return
-    }
-
-    try {
-      await apiPost(`/api/admin/issues/${id}/publish`, {})
-      fetchIssues()
-      // If on future tab, switch to back tab after publish
-      if (activeTab === 'future') {
-        setActiveTab('back')
-      }
-    } catch (error: any) {
-      alert(error.message || 'Gagal mempublikasikan isu')
-    }
-  }
-
-  const handleModalClose = () => {
-    setIsModalOpen(false)
-    setEditingIssue(null)
-  }
-
-  const handleModalSuccess = async () => {
-    fetchIssues()
-    handleModalClose()
-  }
-
-  const tabs = [
-    { id: 'future', label: 'Future Issues' },
-    { id: 'back', label: 'Back Issues' },
-  ]
-
-  if (!currentJournalId) {
+  if (loading) {
     return (
       <div className="space-y-6">
-        <LoadingSpinner message="Memuat data jurnal..." />
+        <div className="flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0056A1]"></div>
+          <span className="ml-3 text-gray-600">Memuat data...</span>
+        </div>
       </div>
     )
   }
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Manajemen Isu"
-        description={`Kelola isu jurnal (Total: ${total} isu)`}
-        action={
-          activeTab === 'future' ? (
-            <button
-              onClick={() => {
-                setEditingIssue(null)
-                setIsModalOpen(true)
-              }}
-              className="flex items-center space-x-2 px-4 py-2 bg-[#0056A1] text-white rounded-md hover:bg-[#003d5c] transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Buat Isu Baru</span>
-            </button>
-          ) : null
-        }
-      />
-
-      {error && <ErrorAlert message={error} />}
-
-      <ContentCard>
-        <Tabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={(tabId) => {
-            setActiveTab(tabId as 'future' | 'back')
-            goToPage(1) // Reset to first page when switching tabs
-          }}
-        />
-
-        <div className="mt-4">
-          <SearchBar
-            placeholder="Cari berdasarkan nama isu, volume/nomor, atau tahun..."
-            value={search}
-            onChange={setSearch}
-          />
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md">
+          {error}
         </div>
+      </div>
+    )
+  }
 
-        {loading ? (
-          <LoadingSpinner message="Memuat data isu..." />
-        ) : (
-          <>
-            <div className="mt-4">
-              <IssueTable
-                issues={issues}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onPublish={activeTab === 'future' ? handlePublish : undefined}
-                onRefresh={fetchIssues}
-              />
-            </div>
+  if (!userData) {
+    return null // This should not happen, but just in case
+  }
 
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              totalItems={total}
-              itemsPerPage={limit}
-              onPageChange={goToPage}
-              itemName="isu"
-            />
-          </>
-        )}
-      </ContentCard>
-
-      <IssueFormModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onSuccess={handleModalSuccess}
-        issue={editingIssue}
-        journals={journals}
-      />
-    </div>
-  )
+  return <IssuesClientPage user={userData.user} journal={userData.journal} />
 }
 

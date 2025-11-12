@@ -10,6 +10,7 @@ interface Journal {
   e_issn?: string
   logo_url?: string
   tenants?: {
+    id?: string
     name: string
     slug: string
   }
@@ -17,11 +18,15 @@ interface Journal {
 
 interface JournalHeaderProps {
   journal: Journal
+  journalSlug?: string // Add journalSlug prop for navigation
 }
 
-export default async function JournalHeader({ journal }: JournalHeaderProps) {
+export default async function JournalHeader({ journal, journalSlug }: JournalHeaderProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  // Use tenant slug if available, otherwise use journal ID
+  const basePath = journalSlug || journal.tenants?.slug || journal.id
 
   return (
     <header className="bg-white border-b-2 border-[var(--ojs-primary)]">
@@ -47,19 +52,13 @@ export default async function JournalHeader({ journal }: JournalHeaderProps) {
           
           <nav className="flex items-center space-x-4">
             <Link 
-              href={`/journal/${journal.id}`}
+              href={`/${basePath}`}
               className="text-[var(--ojs-primary)] hover:underline"
             >
               Beranda
             </Link>
             <Link 
-              href={`/journal/${journal.id}/about`}
-              className="text-[var(--ojs-primary)] hover:underline"
-            >
-              Tentang
-            </Link>
-            <Link 
-              href={`/journal/${journal.id}/issues`}
+              href={`/${basePath}/issues`}
               className="text-[var(--ojs-primary)] hover:underline"
             >
               Issues

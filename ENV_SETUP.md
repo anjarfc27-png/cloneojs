@@ -46,6 +46,7 @@ env.local
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://cqaefitmerciqcneksqm.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxYWVmaXRtZXJjaXFjbmVrc3FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MDI3NzEsImV4cCI6MjA3ODI3ODc3MX0.B04UjcIfxShFsdwBFWLDHJYdEUbMXjaNs9iDoIPQ5kM
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 ```
 
 ## 🔧 Cara Membuat File .env.local
@@ -78,7 +79,10 @@ Setelah membuat file, cek:
 
 1. **Nama file**: Harus `.env.local` (bukan `.env.local.txt` atau lainnya)
 2. **Lokasi**: Harus di root project (sama level dengan `package.json`)
-3. **Isi**: Harus ada 2 baris dengan `NEXT_PUBLIC_` di depan
+3. **Isi**: Harus ada 3 baris:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (⚠️ WAJIB untuk Server Actions)
 
 ## 🔄 Setelah Membuat/Mengubah .env.local
 

@@ -16,29 +16,32 @@ interface Journal {
 interface JournalSidebarProps {
   journal: Journal
   sections: Section[]
+  journalSlug?: string // Add journalSlug prop for navigation
 }
 
-export default function JournalSidebar({ journal, sections }: JournalSidebarProps) {
+export default function JournalSidebar({ journal, sections, journalSlug }: JournalSidebarProps) {
+  // Use journalSlug if available, otherwise use journal ID
+  const basePath = journalSlug || journal.id
+
   return (
     <aside className="space-y-6">
       {/* Sections */}
-      <div className="ojs-card">
-        <h3 className="text-lg font-bold text-[var(--ojs-primary)] mb-4">
-          Sections
-        </h3>
-        <ul className="space-y-2">
-          {sections.map((section) => (
-            <li key={section.id}>
-              <Link
-                href={`/journal/${journal.id}/section/${section.id}`}
-                className="text-gray-700 hover:text-[var(--ojs-primary)] hover:underline"
-              >
-                {section.title}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {sections.length > 0 && (
+        <div className="ojs-card">
+          <h3 className="text-lg font-bold text-[var(--ojs-primary)] mb-4">
+            Sections
+          </h3>
+          <ul className="space-y-2">
+            {sections.map((section) => (
+              <li key={section.id}>
+                <span className="text-gray-700">
+                  {section.title}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Journal Info */}
       <div className="ojs-card">

@@ -16,6 +16,8 @@ interface JournalFormModalProps {
   onSuccess: () => void
   journal?: Journal | null
   editors: Editor[]
+  onCreate?: (data: any) => Promise<any>
+  onUpdate?: (data: any) => Promise<any>
 }
 
 export default function JournalFormModal({
@@ -24,6 +26,8 @@ export default function JournalFormModal({
   onSuccess,
   journal,
   editors,
+  onCreate,
+  onUpdate,
 }: JournalFormModalProps) {
   const [formData, setFormData] = useState({
     title: '',
@@ -70,34 +74,41 @@ export default function JournalFormModal({
     setLoading(true)
 
     try {
-      const url = isEdit ? `/api/admin/journals/${journal?.id}` : '/api/admin/journals'
-      const method = isEdit ? 'PUT' : 'POST'
-
       const payload: any = {
         title: formData.title,
-        description: formData.description,
+        description: formData.description || null,
         issn: formData.issn || null,
         e_issn: formData.e_issn || null,
-        editor_id: formData.editor_id || null,
+        journal_manager_id: formData.editor_id || null,
         is_active: formData.is_active,
+        language: 'id', // Default language
       }
 
-      if (!isEdit && formData.tenant_id) {
-        payload.tenant_id = formData.tenant_id
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to save journal')
+      // Use Server Actions (required)
+      if (!isEdit && onCreate) {
+        // Generate path from title if not provided
+        if (!payload.path) {
+          payload.path = formData.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+        }
+        
+        const result = await onCreate(payload)
+        
+        if (!result || (result && !result.success)) {
+          throw new Error(result?.error || 'Failed to create journal')
+        }
+      } else if (isEdit && onUpdate) {
+        payload.id = journal?.id
+        
+        const result = await onUpdate(payload)
+        
+        if (!result || (result && !result.success)) {
+          throw new Error(result?.error || 'Failed to update journal')
+        }
+      } else {
+        throw new Error('Server Actions (onCreate/onUpdate) are required')
       }
 
       onSuccess()

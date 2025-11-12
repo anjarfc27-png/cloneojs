@@ -1,8 +1,16 @@
+/**
+ * Issue Form Modal (Using Server Actions)
+ * 
+ * This component uses Server Actions instead of API routes for better performance and security.
+ */
+
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { X } from 'lucide-react'
 import { Issue } from './IssueTable'
+import { createIssue } from '@/actions/issues/create'
+import { updateIssue } from '@/actions/issues/update'
 
 interface Journal {
   id: string
@@ -15,6 +23,7 @@ interface IssueFormModalProps {
   onSuccess: () => void
   issue?: Issue | null
   journals: Journal[]
+  useServerActions?: boolean // Use Server Actions instead of API routes
 }
 
 export default function IssueFormModal({
@@ -23,6 +32,7 @@ export default function IssueFormModal({
   onSuccess,
   issue,
   journals,
+  useServerActions = true, // Default to Server Actions
 }: IssueFormModalProps) {
   const [formData, setFormData] = useState({
     journal_id: '',
@@ -35,10 +45,17 @@ export default function IssueFormModal({
     status: 'draft' as 'draft' | 'scheduled' | 'published',
     access_status: 'open',
   })
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   const isEdit = !!issue
+
+  // Auto-set journal_id if only one journal
+  useEffect(() => {
+    if (journals.length > 0 && !formData.journal_id) {
+      setFormData(prev => ({ ...prev, journal_id: journals[0].id }))
+    }
+  }, [journals])
 
   useEffect(() => {
     if (issue) {
@@ -83,7 +100,7 @@ export default function IssueFormModal({
 
     // Validation
     if (!formData.journal_id || !formData.year) {
-      setError('Volume, Nomor, dan Tahun harus diisi')
+      setError('Jurnal dan Tahun harus diisi')
       return
     }
 
@@ -97,45 +114,51 @@ export default function IssueFormModal({
       return
     }
 
-    setLoading(true)
-
-    try {
-      const url = isEdit ? `/api/admin/issues/${issue?.id}` : '/api/admin/issues'
-      const method = isEdit ? 'PUT' : 'POST'
-
-      const payload: any = {
-        journal_id: formData.journal_id,
-        volume: formData.volume ? parseInt(formData.volume) : null,
-        number: formData.number || null,
-        year: parseInt(formData.year),
-        title: formData.title || null,
-        description: formData.description || null,
-        published_date: formData.published_date ? new Date(formData.published_date).toISOString() : null,
-        status: formData.status,
-        access_status: formData.access_status,
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to save issue')
-      }
-
-      onSuccess()
-      onClose()
-    } catch (error: any) {
-      setError(error.message || 'Terjadi kesalahan saat menyimpan data')
-    } finally {
-      setLoading(false)
+    if (!useServerActions) {
+      // Fallback to API routes if needed
+      setError('Server Actions mode is required')
+      return
     }
+
+    startTransition(async () => {
+      try {
+        const payload: any = {
+          journal_id: formData.journal_id,
+          volume: formData.volume ? parseInt(formData.volume) : null,
+          number: formData.number || null,
+          year: parseInt(formData.year),
+          title: formData.title || null,
+          description: formData.description || null,
+          published_date: formData.published_date ? new Date(formData.published_date).toISOString() : null,
+          status: formData.status,
+          access_status: formData.access_status,
+        }
+
+        let result
+
+        if (isEdit && issue) {
+          result = await updateIssue({
+            id: issue.id,
+            ...payload,
+          })
+        } else {
+          result = await createIssue(payload)
+        }
+
+        if (!result.success) {
+          setError(result.error || 'Terjadi kesalahan saat menyimpan data')
+          if (result.details) {
+            console.error('Validation errors:', result.details)
+          }
+          return
+        }
+
+        onSuccess()
+        onClose()
+      } catch (error: any) {
+        setError(error.message || 'Terjadi kesalahan saat menyimpan data')
+      }
+    })
   }
 
   if (!isOpen) return null
@@ -183,7 +206,7 @@ export default function IssueFormModal({
                   value={formData.journal_id}
                   onChange={(e) => setFormData({ ...formData, journal_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0056A1] focus:border-[#0056A1] text-sm"
-                  disabled={loading || isEdit}
+                  disabled={isPending || isEdit}
                 >
                   <option value="">Pilih Jurnal</option>
                   {journals.map((journal) => (
@@ -206,7 +229,7 @@ export default function IssueFormModal({
                     value={formData.volume}
                     onChange={(e) => setFormData({ ...formData, volume: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0056A1] focus:border-[#0056A1] text-sm"
-                    disabled={loading}
+                    disabled={isPending}
                   />
                 </div>
                 <div>
@@ -219,7 +242,7 @@ export default function IssueFormModal({
                     value={formData.number}
                     onChange={(e) => setFormData({ ...formData, number: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0056A1] focus:border-[#0056A1] text-sm"
-                    disabled={loading}
+                    disabled={isPending}
                   />
                 </div>
                 <div>
@@ -235,7 +258,7 @@ export default function IssueFormModal({
                     value={formData.year}
                     onChange={(e) => setFormData({ ...formData, year: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0056A1] focus:border-[#0056A1] text-sm"
-                    disabled={loading}
+                    disabled={isPending}
                   />
                 </div>
               </div>
@@ -250,7 +273,7 @@ export default function IssueFormModal({
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0056A1] focus:border-[#0056A1] text-sm"
-                  disabled={loading}
+                  disabled={isPending}
                   placeholder="Contoh: Vol. 1 No. 1 (2025): Judul"
                 />
               </div>
@@ -265,7 +288,7 @@ export default function IssueFormModal({
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0056A1] focus:border-[#0056A1] text-sm"
-                  disabled={loading}
+                  disabled={isPending}
                 />
               </div>
 
@@ -279,7 +302,7 @@ export default function IssueFormModal({
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as 'draft' | 'scheduled' | 'published' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0056A1] focus:border-[#0056A1] text-sm"
-                  disabled={loading}
+                  disabled={isPending}
                 >
                   <option value="draft">Draft</option>
                   <option value="scheduled">Dijadwalkan</option>
@@ -299,7 +322,7 @@ export default function IssueFormModal({
                     value={formData.published_date}
                     onChange={(e) => setFormData({ ...formData, published_date: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0056A1] focus:border-[#0056A1] text-sm"
-                    disabled={loading}
+                    disabled={isPending}
                   />
                 </div>
               )}
@@ -308,17 +331,17 @@ export default function IssueFormModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  disabled={loading}
+                  disabled={isPending}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={isPending}
                   className="px-4 py-2 text-sm font-medium text-white bg-[#0056A1] rounded-md hover:bg-[#003d5c] transition-colors disabled:opacity-50"
                 >
-                  {loading ? 'Menyimpan...' : isEdit ? 'Update' : 'Simpan'}
+                  {isPending ? 'Menyimpan...' : isEdit ? 'Update' : 'Simpan'}
                 </button>
               </div>
             </form>

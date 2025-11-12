@@ -1,4 +1,4 @@
-import { Activity } from '@/lib/admin/dashboard'
+import { Activity } from '@/actions/dashboard/get'
 import { formatDistanceToNow } from 'date-fns'
 import {
   UserPlus,
@@ -12,20 +12,24 @@ interface ActivityTableProps {
   activities: Activity[]
 }
 
-const activityIcons = {
+const activityIcons: Record<string, any> = {
   user_created: UserPlus,
   journal_approved: BookOpen,
   settings_changed: Settings,
   submission_received: FileText,
   review_completed: CheckCircle,
+  // Default icon
+  default: FileText,
 }
 
-const activityColors = {
+const activityColors: Record<string, string> = {
   user_created: 'text-blue-600 bg-blue-50',
   journal_approved: 'text-green-600 bg-green-50',
   settings_changed: 'text-orange-600 bg-orange-50',
   submission_received: 'text-purple-600 bg-purple-50',
   review_completed: 'text-indigo-600 bg-indigo-50',
+  // Default color
+  default: 'text-gray-600 bg-gray-50',
 }
 
 export default function ActivityTable({ activities }: ActivityTableProps) {
@@ -62,8 +66,8 @@ export default function ActivityTable({ activities }: ActivityTableProps) {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {activities.map((activity) => {
-              const Icon = activityIcons[activity.type]
-              const colorClass = activityColors[activity.type]
+              const Icon = activityIcons[activity.type] || activityIcons.default
+              const colorClass = activityColors[activity.type] || activityColors.default
 
               return (
                 <tr key={activity.id} className="hover:bg-gray-50 transition-colors">
@@ -78,12 +82,12 @@ export default function ActivityTable({ activities }: ActivityTableProps) {
                         <Icon className="w-4 h-4" />
                       </div>
                       <span className="text-sm font-medium text-gray-900">
-                        {activity.description}
+                        {activity.description || activity.type}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {activity.userName}
+                    {activity.userName || 'System'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {activity.details || '-'}

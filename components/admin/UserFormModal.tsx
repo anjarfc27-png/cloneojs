@@ -9,6 +9,8 @@ interface UserFormModalProps {
   onClose: () => void
   onSuccess: () => void
   user?: User | null
+  onCreate?: (data: any) => Promise<any>
+  onUpdate?: (data: any) => Promise<any>
 }
 
 const roleOptions = [
@@ -25,6 +27,8 @@ export default function UserFormModal({
   onClose,
   onSuccess,
   user,
+  onCreate,
+  onUpdate,
 }: UserFormModalProps) {
   const [formData, setFormData] = useState<{
     email: string
@@ -72,42 +76,40 @@ export default function UserFormModal({
     setLoading(true)
 
     try {
-      const url = isEdit ? `/api/admin/users/${user?.id}` : '/api/admin/users'
-      const method = isEdit ? 'PUT' : 'POST'
-
       const payload: any = {
         email: formData.email,
         full_name: formData.full_name,
-        role: formData.role,
         is_active: formData.is_active,
       }
 
-      if (!isEdit && !password) {
-        setError('Password is required for new users')
-        setLoading(false)
-        return
-      }
-
-      if (!isEdit) {
+      // Use Server Actions (required)
+      if (!isEdit && onCreate) {
+        if (!password) {
+          setError('Password is required for new users')
+          setLoading(false)
+          return
+        }
         payload.password = password
-      }
-
-      if (formData.tenant_id) {
-        payload.tenant_id = formData.tenant_id
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to save user')
+        payload.role = formData.role
+        if (formData.tenant_id) {
+          payload.tenant_id = formData.tenant_id
+        }
+        
+        const result = await onCreate(payload)
+        
+        if (!result || (result && !result.success)) {
+          throw new Error(result?.error || 'Failed to create user')
+        }
+      } else if (isEdit && onUpdate) {
+        payload.id = user?.id
+        
+        const result = await onUpdate(payload)
+        
+        if (!result || (result && !result.success)) {
+          throw new Error(result?.error || 'Failed to update user')
+        }
+      } else {
+        throw new Error('Server Actions (onCreate/onUpdate) are required')
       }
 
       onSuccess()

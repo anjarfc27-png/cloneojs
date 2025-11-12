@@ -164,6 +164,15 @@ export async function POST(
 
     // Register DOI if provided
     if (doi) {
+      // Update article with DOI
+      await supabase
+        .from('articles')
+        .update({ doi })
+        .eq('id', article.id)
+
+      // Create DOI registration record
+      // Note: Actual Crossref registration should be done via /api/admin/crossref/register
+      // This just creates a pending registration record
       await supabase
         .from('doi_registrations')
         .insert({
@@ -172,6 +181,8 @@ export async function POST(
           status: 'pending',
           registration_agency: 'crossref', // Default
         })
+        .onConflict('article_id,doi')
+        .merge()
     }
 
     return NextResponse.json({ article }, { status: 201 })
