@@ -10,14 +10,15 @@ import { createAdminClient } from '@/lib/db/supabase-admin'
 import { auditLog } from '@/lib/audit/log'
 import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Delete issue
  */
-export async function deleteIssue(id: string) {
+export async function deleteIssue(id: string, options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

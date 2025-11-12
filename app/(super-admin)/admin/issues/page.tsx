@@ -24,6 +24,7 @@ import { updateIssue } from '@/actions/issues/update'
 import { deleteIssue } from '@/actions/issues/delete'
 import { publishIssue } from '@/actions/issues/publish'
 import { getJournals } from '@/actions/journals/get'
+import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
 interface Journal {
   id: string
@@ -44,12 +45,14 @@ export default function IssuesPage() {
   const [totalPages, setTotalPages] = useState(0)
 
   const [isPending, startTransition] = useTransition()
+  const { getAccessToken } = useAdminAuth()
 
   // Fetch journals for dropdown
   useEffect(() => {
     const fetchJournals = async () => {
       try {
-        const result = await getJournals({ page: 1, limit: 1000 })
+        const accessToken = await getAccessToken()
+        const result = await getJournals({ page: 1, limit: 1000, accessToken })
         if (result.success && result.data) {
           setJournals(result.data.journals.map(j => ({ id: j.id, title: j.title })))
         }
@@ -66,11 +69,13 @@ export default function IssuesPage() {
     setLoading(true)
     setError(null)
     try {
+      const accessToken = await getAccessToken()
       const result = await getIssues({
         page,
         limit,
         status: activeTab,
         search: search || null,
+        accessToken,
       })
       
       if (!result.success) {
@@ -124,7 +129,8 @@ export default function IssuesPage() {
 
     startTransition(async () => {
       try {
-        const result = await deleteIssue(id)
+        const accessToken = await getAccessToken()
+        const result = await deleteIssue(id, { accessToken })
         
         if (!result.success) {
           alert(result.error || 'Gagal menghapus isu')
@@ -145,7 +151,8 @@ export default function IssuesPage() {
 
     startTransition(async () => {
       try {
-        const result = await publishIssue(id)
+        const accessToken = await getAccessToken()
+        const result = await publishIssue(id, { accessToken })
         
         if (!result.success) {
           alert(result.error || 'Gagal mempublikasikan isu')

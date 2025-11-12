@@ -7,6 +7,7 @@ import ErrorAlert from '@/components/shared/ErrorAlert'
 import Tabs from '@/components/shared/Tabs'
 import { getSiteSettings } from '@/actions/site-settings/get'
 import { updateSiteSettingsBulk } from '@/actions/site-settings/update'
+import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
 interface SiteSetting {
   id: string
@@ -24,6 +25,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const { getAccessToken } = useAdminAuth()
 
   useEffect(() => {
     fetchSettings()
@@ -33,7 +35,8 @@ export default function SettingsPage() {
     try {
       setLoading(true)
       setError(null)
-      const result = await getSiteSettings()
+      const accessToken = await getAccessToken()
+      const result = await getSiteSettings({ accessToken })
       
       if (!result.success) {
         setError(result.error || 'Failed to fetch settings')
@@ -84,9 +87,13 @@ export default function SettingsPage() {
         return
       }
 
-      const result = await updateSiteSettingsBulk({
-        settings: tabSettings,
-      })
+      const accessToken = await getAccessToken()
+      const result = await updateSiteSettingsBulk(
+        {
+          settings: tabSettings,
+        },
+        { accessToken },
+      )
 
       if (!result.success) {
         setError(result.error || 'Failed to save settings')

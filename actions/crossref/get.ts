@@ -9,6 +9,7 @@
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/lib/db/supabase-admin'
 import { doiStatusQuerySchema } from '@/lib/validators/crossref'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 export interface DOIRegistration {
   id: string
@@ -47,14 +48,17 @@ export interface DOIRegistrationsResponse {
 /**
  * Get all DOI registrations
  */
-export async function getDOIRegistrations(params: {
+export async function getDOIRegistrations(
+  params: {
   status?: 'all' | 'registered' | 'pending' | 'failed'
   page?: number
   limit?: number
-} = {}) {
+} = {},
+  options: ServerActionAuthOptions = {},
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -148,10 +152,10 @@ export async function getDOIRegistrations(params: {
 /**
  * Get DOI status from Crossref
  */
-export async function getDOIStatus(doi: string) {
+export async function getDOIStatus(doi: string, options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

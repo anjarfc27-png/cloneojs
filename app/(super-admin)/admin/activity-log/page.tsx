@@ -16,6 +16,7 @@ import { usePagination } from '@/hooks/usePagination'
 import { FileText, Trash2, Filter } from 'lucide-react'
 import { getActivityLogs, ActivityLogWithUser } from '@/actions/activity-logs/get'
 import { cleanupActivityLogs } from '@/actions/activity-logs/cleanup'
+import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
 interface ActivityLog {
   id: string
@@ -43,21 +44,26 @@ export default function ActivityLogPage() {
   const [totalPages, setTotalPages] = useState(0)
   const { page, limit, goToPage } = usePagination({ initialPage: 1, initialLimit: 50 })
   const [isPending, startTransition] = useTransition()
+  const { isReady, getAccessToken } = useAdminAuth()
 
   useEffect(() => {
+    if (!isReady) return
     fetchLogs()
-  }, [page, limit, filterAction, filterEntityType])
+  }, [isReady, page, limit, filterAction, filterEntityType])
 
   const fetchLogs = async () => {
+    if (!isReady) return
     try {
       setLoading(true)
       setError(null)
 
+      const accessToken = await getAccessToken()
       const result = await getActivityLogs({
         page,
         limit,
         action: filterAction || null,
         entity_type: filterEntityType || null,
+        accessToken,
       })
 
       if (!result.success) {
@@ -105,7 +111,8 @@ export default function ActivityLogPage() {
 
     startTransition(async () => {
       try {
-        const result = await cleanupActivityLogs({ days: 90 })
+        const accessToken = await getAccessToken()
+        const result = await cleanupActivityLogs({ days: 90 }, { accessToken })
 
         if (!result.success) {
           setError(result.error || 'Failed to delete old logs')

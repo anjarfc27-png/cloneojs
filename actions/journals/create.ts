@@ -13,14 +13,18 @@ import { sanitizeHTML } from '@/lib/security/sanitize-html'
 import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { journalCreateSchema } from '@/lib/validators/journals'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Create a new journal
  */
-export async function createJournal(values: z.infer<typeof journalCreateSchema>) {
+export async function createJournal(
+  values: z.infer<typeof journalCreateSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

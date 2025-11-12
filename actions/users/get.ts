@@ -8,11 +8,13 @@
 
 import { createAdminClient } from '@/lib/db/supabase-admin'
 import { checkSuperAdmin } from '@/lib/admin/auth'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 export interface GetUsersParams {
   page?: number
   limit?: number
   search?: string
+  accessToken?: string
 }
 
 export interface UserWithRoles {
@@ -42,7 +44,7 @@ export interface UserWithRoles {
 export async function getUsers(params: GetUsersParams = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(params.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -215,10 +217,10 @@ export async function getUsers(params: GetUsersParams = {}) {
 /**
  * Get a single user by ID
  */
-export async function getUserById(userId: string) {
+export async function getUserById(userId: string, options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

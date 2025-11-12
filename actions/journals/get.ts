@@ -8,8 +8,9 @@
 
 import { createAdminClient } from '@/lib/db/supabase-admin'
 import { checkSuperAdmin } from '@/lib/admin/auth'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
-export interface GetJournalsParams {
+export interface GetJournalsParams extends ServerActionAuthOptions {
   page?: number
   limit?: number
   search?: string
@@ -43,7 +44,7 @@ export interface JournalWithRelations {
 export async function getJournals(params: GetJournalsParams = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(params.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -192,10 +193,13 @@ export async function getJournals(params: GetJournalsParams = {}) {
 /**
  * Get a single journal by ID
  */
-export async function getJournalById(journalId: string) {
+export async function getJournalById(
+  journalId: string,
+  options: ServerActionAuthOptions = {},
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

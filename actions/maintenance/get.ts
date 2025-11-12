@@ -8,6 +8,7 @@
 
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/lib/db/supabase-admin'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 export interface MaintenanceTask {
   id: string
@@ -27,10 +28,10 @@ export interface MaintenanceInfo {
 /**
  * Get maintenance tasks status
  */
-export async function getMaintenanceTasks() {
+export async function getMaintenanceTasks(options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

@@ -9,6 +9,7 @@
 import { createAdminClient } from '@/lib/db/supabase-admin'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { activityLogQuerySchema } from '@/lib/validators/activity-logs'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 export interface ActivityLogWithUser {
   id: string
@@ -35,10 +36,11 @@ export async function getActivityLogs(params: {
   user_id?: string | null
   start_date?: string | null
   end_date?: string | null
+  accessToken?: string
 }) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(params.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -186,10 +188,10 @@ export async function getActivityLogs(params: {
 /**
  * Get activity log statistics
  */
-export async function getActivityLogStats() {
+export async function getActivityLogStats(options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

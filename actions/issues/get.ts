@@ -9,6 +9,7 @@
 import { createAdminClient } from '@/lib/db/supabase-admin'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { issueQuerySchema } from '@/lib/validators/issues'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 export interface IssueWithRelations {
   id: string
@@ -52,10 +53,11 @@ export async function getIssues(params: {
   status?: 'future' | 'back'
   journal_id?: string | null
   search?: string | null
+  accessToken?: string
 }) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(params.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

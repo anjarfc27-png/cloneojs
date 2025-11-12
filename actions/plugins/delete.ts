@@ -10,14 +10,19 @@ import { checkSuperAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/lib/db/supabase-admin'
 import { auditLog } from '@/lib/audit/log'
 import { revalidatePath } from 'next/cache'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Delete plugin (remove all settings)
  */
-export async function deletePlugin(pluginName: string, journalId?: string | null) {
+export async function deletePlugin(
+  pluginName: string,
+  journalId?: string | null,
+  options: ServerActionAuthOptions = {},
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized || !authCheck.user) {
       return {
         success: false,

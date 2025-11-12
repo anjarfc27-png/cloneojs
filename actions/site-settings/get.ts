@@ -8,14 +8,15 @@
 
 import { createAdminClient } from '@/lib/db/supabase-admin'
 import { checkSuperAdmin } from '@/lib/admin/auth'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Get all site settings
  */
-export async function getSiteSettings() {
+export async function getSiteSettings(options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -73,10 +74,10 @@ export async function getSiteSettings() {
 /**
  * Get a single site setting by name
  */
-export async function getSiteSetting(settingName: string) {
+export async function getSiteSetting(settingName: string, options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

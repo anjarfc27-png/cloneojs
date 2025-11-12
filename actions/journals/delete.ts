@@ -11,6 +11,7 @@ import { auditLog, logJournalAction } from '@/lib/audit/log'
 import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { z } from 'zod'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 const deleteJournalSchema = z.object({
   id: z.string().uuid('Invalid journal ID'),
@@ -19,10 +20,13 @@ const deleteJournalSchema = z.object({
 /**
  * Delete a journal
  */
-export async function deleteJournal(values: z.infer<typeof deleteJournalSchema>) {
+export async function deleteJournal(
+  values: z.infer<typeof deleteJournalSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -121,10 +125,13 @@ export async function deleteJournal(values: z.infer<typeof deleteJournalSchema>)
  * WARNING: This will permanently delete the journal and all related data.
  * Use with caution.
  */
-export async function hardDeleteJournal(values: z.infer<typeof deleteJournalSchema>) {
+export async function hardDeleteJournal(
+  values: z.infer<typeof deleteJournalSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

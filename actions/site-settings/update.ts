@@ -13,6 +13,7 @@ import { auditLog, logSettingsAction, logSecurityEvent } from '@/lib/audit/log'
 import { sanitizeHTML } from '@/lib/security/sanitize-html'
 import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 import {
   siteSettingsUpdateSchema,
   bulkSiteSettingsUpdateSchema,
@@ -25,10 +26,13 @@ import {
 /**
  * Update a single site setting
  */
-export async function updateSiteSetting(values: z.infer<typeof siteSettingsUpdateSchema>) {
+export async function updateSiteSetting(
+  values: z.infer<typeof siteSettingsUpdateSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -119,10 +123,13 @@ export async function updateSiteSetting(values: z.infer<typeof siteSettingsUpdat
 /**
  * Update multiple site settings (bulk update)
  */
-export async function updateSiteSettingsBulk(values: z.infer<typeof bulkSiteSettingsUpdateSchema>) {
+export async function updateSiteSettingsBulk(
+  values: z.infer<typeof bulkSiteSettingsUpdateSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -210,9 +217,12 @@ export async function updateSiteSettingsBulk(values: z.infer<typeof bulkSiteSett
 /**
  * Update site branding settings
  */
-export async function updateSiteBranding(values: z.infer<typeof siteBrandingSchema>) {
+export async function updateSiteBranding(
+  values: z.infer<typeof siteBrandingSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -280,9 +290,12 @@ export async function updateSiteBranding(values: z.infer<typeof siteBrandingSche
 /**
  * Update site contact settings
  */
-export async function updateSiteContact(values: z.infer<typeof siteContactSchema>) {
+export async function updateSiteContact(
+  values: z.infer<typeof siteContactSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -346,9 +359,12 @@ export async function updateSiteContact(values: z.infer<typeof siteContactSchema
 /**
  * Update site security settings
  */
-export async function updateSiteSecurity(values: z.infer<typeof siteSecuritySchema>) {
+export async function updateSiteSecurity(
+  values: z.infer<typeof siteSecuritySchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -416,9 +432,12 @@ export async function updateSiteSecurity(values: z.infer<typeof siteSecuritySche
 /**
  * Update site maintenance settings
  */
-export async function updateSiteMaintenance(values: z.infer<typeof siteMaintenanceSchema>) {
+export async function updateSiteMaintenance(
+  values: z.infer<typeof siteMaintenanceSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

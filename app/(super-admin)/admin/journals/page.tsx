@@ -21,6 +21,7 @@ import { getJournals, JournalWithRelations } from '@/actions/journals/get'
 import { createJournal } from '@/actions/journals/create'
 import { updateJournal } from '@/actions/journals/update'
 import { deleteJournal } from '@/actions/journals/delete'
+import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
 interface Editor {
   id: string
@@ -40,16 +41,19 @@ export default function JournalsPage() {
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [isPending, startTransition] = useTransition()
+  const { getAccessToken } = useAdminAuth()
 
   // Fetch journals
   const fetchJournals = async () => {
     try {
       setLoading(true)
       setError(null)
+      const accessToken = await getAccessToken()
       const result = await getJournals({
         page,
         limit,
         search,
+        accessToken,
       })
 
       if (!result.success) {
@@ -107,7 +111,8 @@ export default function JournalsPage() {
 
     startTransition(async () => {
       try {
-        const result = await deleteJournal({ id })
+        const accessToken = await getAccessToken()
+        const result = await deleteJournal({ id }, { accessToken })
 
         if (!result.success) {
           setError(result.error || 'Failed to delete journal')
@@ -133,7 +138,8 @@ export default function JournalsPage() {
   }
 
   const handleCreate = async (journalData: any) => {
-    const result = await createJournal(journalData)
+    const accessToken = await getAccessToken()
+    const result = await createJournal(journalData, { accessToken })
     if (!result.success) {
       throw new Error(result.error || 'Failed to create journal')
     }
@@ -141,7 +147,8 @@ export default function JournalsPage() {
   }
 
   const handleUpdate = async (journalData: any) => {
-    const result = await updateJournal(journalData)
+    const accessToken = await getAccessToken()
+    const result = await updateJournal(journalData, { accessToken })
     if (!result.success) {
       throw new Error(result.error || 'Failed to update journal')
     }

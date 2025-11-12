@@ -11,6 +11,7 @@ import { auditLog, logUserAction } from '@/lib/audit/log'
 import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { z } from 'zod'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 const deleteUserSchema = z.object({
   id: z.string().uuid('Invalid user ID'),
@@ -19,10 +20,13 @@ const deleteUserSchema = z.object({
 /**
  * Delete a user (soft delete - ban user)
  */
-export async function deleteUser(values: z.infer<typeof deleteUserSchema>) {
+export async function deleteUser(
+  values: z.infer<typeof deleteUserSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -127,10 +131,13 @@ export async function deleteUser(values: z.infer<typeof deleteUserSchema>) {
  * WARNING: This will permanently delete the user and all related data.
  * Use with caution.
  */
-export async function hardDeleteUser(values: z.infer<typeof deleteUserSchema>) {
+export async function hardDeleteUser(
+  values: z.infer<typeof deleteUserSchema>,
+  options: ServerActionAuthOptions = {},
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

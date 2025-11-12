@@ -11,17 +11,21 @@ import { createAdminClient } from '@/lib/db/supabase-admin'
 import { auditLog } from '@/lib/audit/log'
 import { backupCreateSchema } from '@/lib/validators/backup'
 import { revalidatePath } from 'next/cache'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Create a backup
  */
-export async function createBackup(values: {
+export async function createBackup(
+  values: {
   backup_type?: 'full' | 'incremental'
   description?: string
-}) {
+},
+  options: ServerActionAuthOptions = {},
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized || !authCheck.user) {
       return {
         success: false,

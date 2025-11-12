@@ -11,14 +11,15 @@ import { checkSuperAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/lib/db/supabase-admin'
 import { auditLog } from '@/lib/audit/log'
 import { revalidatePath } from 'next/cache'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Regenerate an API key
  */
-export async function regenerateApiKey(id: string) {
+export async function regenerateApiKey(id: string, options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized || !authCheck.user) {
       return {
         success: false,

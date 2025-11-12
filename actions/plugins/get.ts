@@ -8,6 +8,7 @@
 
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/lib/db/supabase-admin'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 export interface PluginSetting {
   id: string
@@ -31,10 +32,10 @@ export interface Plugin {
 /**
  * Get all plugins with their settings
  */
-export async function getPlugins() {
+export async function getPlugins(options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -137,10 +138,14 @@ export async function getPlugins() {
 /**
  * Get plugin by name
  */
-export async function getPluginByName(pluginName: string, journalId?: string | null) {
+export async function getPluginByName(
+  pluginName: string,
+  journalId?: string | null,
+  options: ServerActionAuthOptions = {},
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

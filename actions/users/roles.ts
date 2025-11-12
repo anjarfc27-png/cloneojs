@@ -13,13 +13,20 @@ import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { userRoleAssignmentSchema, userRoleRevocationSchema } from '@/lib/validators/users'
 
+type ServerActionOptions = {
+  accessToken?: string
+}
+
 /**
  * Assign a role to a user
  */
-export async function assignUserRole(values: z.infer<typeof userRoleAssignmentSchema>) {
+export async function assignUserRole(
+  values: z.infer<typeof userRoleAssignmentSchema>,
+  options: ServerActionOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -174,10 +181,13 @@ export async function assignUserRole(values: z.infer<typeof userRoleAssignmentSc
 /**
  * Revoke a role from a user
  */
-export async function revokeUserRole(values: z.infer<typeof userRoleRevocationSchema>) {
+export async function revokeUserRole(
+  values: z.infer<typeof userRoleRevocationSchema>,
+  options: ServerActionOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

@@ -13,14 +13,18 @@ import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { issueUpdateSchema } from '@/lib/validators/issues'
 import { sanitizeHTML } from '@/lib/security/sanitize-html'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Update issue
  */
-export async function updateIssue(values: z.infer<typeof issueUpdateSchema>) {
+export async function updateIssue(
+  values: z.infer<typeof issueUpdateSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

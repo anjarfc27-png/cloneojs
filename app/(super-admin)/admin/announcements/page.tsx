@@ -17,6 +17,7 @@ import { getAnnouncements, AnnouncementWithRelations } from '@/actions/announcem
 import { createAnnouncement } from '@/actions/announcements/create'
 import { updateAnnouncement, updateAnnouncementStatus } from '@/actions/announcements/update'
 import { deleteAnnouncement } from '@/actions/announcements/delete'
+import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
 interface Announcement {
   id: string
@@ -51,12 +52,15 @@ export default function AnnouncementsPage() {
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [isPending, startTransition] = useTransition()
+  const { isReady } = useAdminAuth()
 
   useEffect(() => {
+    if (!isReady) return
     fetchAnnouncements()
-  }, [page, limit])
+  }, [isReady, page, limit])
 
   const fetchAnnouncements = async () => {
+    if (!isReady) return
     try {
       setLoading(true)
       setError(null)

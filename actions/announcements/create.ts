@@ -8,19 +8,23 @@
 
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/db/supabase-admin'
-import { auditLog, logSettingsAction } from '@/lib/audit/log'
+import { logSettingsAction } from '@/lib/audit/log'
 import { sanitizeHTML } from '@/lib/security/sanitize-html'
 import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { announcementCreateSchema } from '@/lib/validators/announcements'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Create a new announcement
  */
-export async function createAnnouncement(values: z.infer<typeof announcementCreateSchema>) {
+export async function createAnnouncement(
+  values: z.infer<typeof announcementCreateSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized || !authCheck.user) {
       return {
         success: false,

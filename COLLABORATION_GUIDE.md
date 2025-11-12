@@ -61,46 +61,72 @@ Modul-modul berikut sudah selesai dan **JANGAN DIEDIT** kecuali ada bug:
 
 ## 🌿 Git Branching Strategy
 
-### Branch Structure
+### ⚠️ IMPORTANT: Struktur Branch Baru
+
+**Setiap halaman dikerjakan di branch terpisah!**
+
+Lihat **[BRANCH_STRUCTURE.md](./BRANCH_STRUCTURE.md)** untuk detail lengkap struktur branch per halaman.
+
+### 3 Tim & Branch Structure
 
 ```
 main (production-ready)
-├── develop (integration branch)
-    ├── feature/editor-dashboard
-    ├── feature/author-pages
-    ├── feature/reviewer-pages
-    ├── feature/public-pages
-    └── bugfix/...
+└── develop (integration branch)
+    │
+    ├── 🟣 TIM 1: Site Administrator (Maintenance)
+    │   └── bugfix/admin-[page]-[issue]
+    │
+    ├── 🔵 TIM 2: Editor Dashboard
+    │   ├── feature/editor-dashboard-home
+    │   ├── feature/editor-submissions-list
+    │   ├── feature/editor-submission-detail
+    │   ├── feature/editor-reviews-list
+    │   └── ... (satu branch per halaman)
+    │
+    └── 🟢 TIM 3: Author, Reviewer & Public
+        ├── feature/author-submissions-list
+        ├── feature/reviewer-assignments-list
+        ├── feature/public-homepage
+        └── ... (satu branch per halaman)
 ```
 
 ### Workflow
 
-1. **Buat branch dari `develop`**
+1. **Buat branch dari `develop`** (satu halaman = satu branch)
    ```bash
    git checkout develop
    git pull origin develop
-   git checkout -b feature/nama-modul
+   git checkout -b feature/editor-submissions-list  # contoh
    ```
 
 2. **Naming Convention**
-   - `feature/editor-dashboard` - Fitur baru
-   - `bugfix/submission-bug` - Perbaikan bug
-   - `refactor/auth-system` - Refactoring
-   - `docs/update-readme` - Dokumentasi
+   - `feature/editor-[page-name]` - Editor pages
+   - `feature/author-[page-name]` - Author pages
+   - `feature/reviewer-[page-name]` - Reviewer pages
+   - `feature/public-[page-name]` - Public pages
+   - `bugfix/admin-[page]-[issue]` - Admin bug fixes
 
 3. **Commit Messages**
    ```
-   feat(editor): add submission list page
-   fix(auth): resolve login redirect issue
+   feat(editor): add submissions list page
+   fix(admin-users): resolve pagination bug
    refactor(components): extract common form logic
    docs(readme): update setup instructions
    ```
 
 4. **Push & Create Pull Request**
    ```bash
-   git push origin feature/nama-modul
+   git push origin feature/editor-submissions-list
    ```
    Lalu buat PR ke `develop` di GitHub/GitLab
+
+### 📋 Detail Branch per Halaman
+
+**Lihat [BRANCH_STRUCTURE.md](./BRANCH_STRUCTURE.md) untuk:**
+- Daftar lengkap semua branch per halaman
+- Task list per halaman
+- File yang perlu dibuat/edit
+- Status tracking
 
 ---
 
@@ -286,102 +312,111 @@ PR: [Link setelah PR dibuat]
 
 ---
 
-## 👥 Pembagian Kerja yang Disarankan
+## 👥 Pembagian Kerja - 3 Tim
 
-### Tim Member 1: Editor Dashboard
-**Branch**: `feature/editor-dashboard`
+### 🟣 TIM 1: Site Administrator / Super Admin 🚧 IN PROGRESS
+
+**Status**: 🚧 **MASIH PERLU DIKERJAKAN** - Development Active
+
+**Catatan Penting**: 
+- Halaman Super Admin (`/admin/*`) sudah ada tapi masih perlu **improvement, testing, dan fitur tambahan**
+- Banyak fitur yang masih perlu diselesaikan
+- Bisa dikerjakan **parallel** dengan TIM 2 dan TIM 3
 
 **Tugas**:
-- ✅ Review & improve `/dashboard/submissions` (sudah ada)
-- ✅ Review & improve `/dashboard/submissions/[id]` (sudah ada)
-- ✅ Review & improve `/dashboard/reviews` (sudah ada)
-- ✅ Review & improve `/dashboard/reviews/[id]` (sudah ada)
-- ✅ Review & improve `/dashboard/articles` (sudah ada)
-- ✅ Review & improve `/dashboard/issues` (sudah ada)
-- ✅ Review & improve `/dashboard/settings` (sudah ada)
+- Improve UI/UX halaman yang sudah ada
+- Add missing features
+- Fix bugs
+- Testing dan quality assurance
+- Performance optimization
 
-**Files yang akan dikerjakan**:
-- `app/dashboard/submissions/page.tsx`
-- `app/dashboard/submissions/[id]/page.tsx`
-- `app/dashboard/reviews/page.tsx`
-- `app/dashboard/reviews/[id]/page.tsx`
-- `app/dashboard/articles/page.tsx`
-- `components/submissions/*`
-- `components/reviews/*`
+**Branch Pattern**: 
+- `feature/admin-[page]-[improvement]` - Fitur baru atau improvement
+- `bugfix/admin-[page]-[issue]` - Perbaikan bug
 
-**Dependencies**:
-- Server Actions di `actions/submissions/`
-- Server Actions di `actions/reviews/`
+**Contoh Branches**:
+- `feature/admin-dashboard-statistics-enhancement`
+- `feature/admin-users-bulk-actions`
+- `feature/admin-settings-advanced-options`
+- `bugfix/admin-dashboard-statistics-error`
+- `bugfix/admin-users-pagination-bug`
+
+**Lihat [BRANCH_STRUCTURE.md](./BRANCH_STRUCTURE.md)** untuk daftar lengkap halaman admin.
 
 ---
 
-### Tim Member 2: Author Pages
-**Branch**: `feature/author-pages`
+### 🔵 TIM 2: Editor Dashboard
 
-**Tugas**:
-- [ ] Create `/dashboard/author/submissions` - List my submissions
-- [ ] Create `/dashboard/author/submissions/new` - Create submission form
-- [ ] Create `/dashboard/author/submissions/[id]` - View/edit submission
-- [ ] Create `/dashboard/author/articles` - My published articles
+**Status**: 🚧 **PERLU DIKERJAKAN**
 
-**Files yang akan dibuat**:
-- `app/dashboard/author/submissions/page.tsx`
-- `app/dashboard/author/submissions/new/page.tsx`
-- `app/dashboard/author/submissions/[id]/page.tsx`
-- `app/dashboard/author/articles/page.tsx`
-- `components/author/SubmissionForm.tsx`
-- `components/author/SubmissionList.tsx`
+**Prioritas**: Bisa dikerjakan **parallel** dengan Super Admin atau setelah Super Admin selesai.
 
-**Dependencies**:
-- Reuse Server Actions dari `actions/submissions/`
-- Reuse components dari `components/submissions/`
+**Total Halaman**: 14 halaman (lihat detail di bawah)
 
----
+**Branch Pattern**: `feature/editor-[page-name]`
 
-### Tim Member 3: Reviewer Pages
-**Branch**: `feature/reviewer-pages`
+**Halaman yang Perlu Dikerjakan**:
+1. `feature/editor-dashboard-home` - `/dashboard`
+2. `feature/editor-submissions-list` - `/dashboard/submissions`
+3. `feature/editor-submission-detail` - `/dashboard/submissions/[id]`
+4. `feature/editor-submission-new` - `/dashboard/submissions/new`
+5. `feature/editor-reviews-list` - `/dashboard/reviews`
+6. `feature/editor-review-detail` - `/dashboard/reviews/[id]`
+7. `feature/editor-articles-list` - `/dashboard/articles`
+8. `feature/editor-articles-detail` - `/dashboard/articles/[id]`
+9. `feature/editor-issues-list` - `/dashboard/issues`
+10. `feature/editor-issues-detail` - `/dashboard/issues/[id]`
+11. `feature/editor-issues-create` - `/dashboard/issues/new`
+12. `feature/editor-journals-list` - `/dashboard/journals`
+13. `feature/editor-journals-detail` - `/dashboard/journals/[id]`
+14. `feature/editor-settings` - `/dashboard/settings`
 
-**Tugas**:
-- [ ] Create `/dashboard/reviewer/assignments` - List assignments
-- [ ] Create `/dashboard/reviewer/assignments/[id]` - Review form
-- [ ] Create `/dashboard/reviewer/history` - Review history
+**Lihat [BRANCH_STRUCTURE.md](./BRANCH_STRUCTURE.md)** untuk detail task per halaman.
 
-**Files yang akan dibuat**:
-- `app/dashboard/reviewer/assignments/page.tsx`
-- `app/dashboard/reviewer/assignments/[id]/page.tsx`
-- `app/dashboard/reviewer/history/page.tsx`
-- `components/reviewer/ReviewForm.tsx`
-- `components/reviewer/AssignmentList.tsx`
-
-**Dependencies**:
-- Server Actions di `actions/reviews/` (perlu dibuat jika belum ada)
-- Reuse components dari `components/reviews/`
+**Pembagian dalam Tim 2** (jika ada beberapa developer):
+- Developer 1: Submissions (4 halaman)
+- Developer 2: Reviews & Articles (4 halaman)
+- Developer 3: Issues & Journals (5 halaman)
+- Developer 4: Dashboard & Settings (2 halaman)
 
 ---
 
-### Tim Member 4: Public Pages
-**Branch**: `feature/public-pages`
+### 🟢 TIM 3: Author, Reviewer & Public Pages
 
-**Tugas**:
-- [ ] Create `/` - Homepage (journal list)
-- [ ] Create `/journal/[slug]` - Journal homepage
-- [ ] Create `/journal/[slug]/about` - About page
-- [ ] Create `/journal/[slug]/articles` - Article list
-- [ ] Create `/article/[id]` - Article detail
-- [ ] Improve `/search` (sudah ada)
+**Status**: 🚧 Perlu Dikerjakan
 
-**Files yang akan dibuat**:
-- `app/page.tsx` (update existing)
-- `app/journal/[slug]/page.tsx` (update existing)
-- `app/journal/[slug]/about/page.tsx`
-- `app/journal/[slug]/articles/page.tsx`
-- `app/article/[id]/page.tsx` (update existing)
-- `components/journal/JournalHomepage.tsx`
-- `components/article/ArticleView.tsx`
+**Total Halaman**: 13 halaman
 
-**Dependencies**:
-- Server Actions di `actions/journals/`
-- Server Actions di `actions/issues/`
+**Branch Pattern**: 
+- Author: `feature/author-[page-name]`
+- Reviewer: `feature/reviewer-[page-name]`
+- Public: `feature/public-[page-name]`
+
+#### Author Pages (4 halaman):
+1. `feature/author-submissions-list` - `/dashboard/author/submissions`
+2. `feature/author-submission-create` - `/dashboard/author/submissions/new`
+3. `feature/author-submission-detail` - `/dashboard/author/submissions/[id]`
+4. `feature/author-articles-list` - `/dashboard/author/articles`
+
+#### Reviewer Pages (3 halaman):
+5. `feature/reviewer-assignments-list` - `/dashboard/reviewer/assignments`
+6. `feature/reviewer-assignment-detail` - `/dashboard/reviewer/assignments/[id]`
+7. `feature/reviewer-history` - `/dashboard/reviewer/history`
+
+#### Public Pages (6 halaman):
+8. `feature/public-homepage` - `/`
+9. `feature/public-journal-homepage` - `/journal/[slug]`
+10. `feature/public-journal-about` - `/journal/[slug]/about`
+11. `feature/public-journal-articles` - `/journal/[slug]/articles`
+12. `feature/public-article-detail` - `/article/[id]`
+13. `feature/public-search` - `/search`
+
+**Lihat [BRANCH_STRUCTURE.md](./BRANCH_STRUCTURE.md)** untuk detail task per halaman.
+
+**Pembagian dalam Tim 3** (jika ada beberapa developer):
+- Developer 1: Author Pages (4 halaman)
+- Developer 2: Reviewer Pages (3 halaman)
+- Developer 3: Public Pages (6 halaman)
 
 ---
 

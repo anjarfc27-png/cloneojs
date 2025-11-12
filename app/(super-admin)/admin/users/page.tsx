@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useRef } from 'react'
 import { Plus } from 'lucide-react'
 import { usePagination } from '@/hooks/usePagination'
 import UserTable, { User } from '@/components/admin/UserTable'
@@ -21,6 +21,7 @@ import { getUsers, UserWithRoles } from '@/actions/users/get'
 import { createUser } from '@/actions/users/create'
 import { updateUser } from '@/actions/users/update'
 import { deleteUser } from '@/actions/users/delete'
+import { useSupabaseAccessToken } from '@/lib/admin/useSupabaseAccessToken'
 
 export default function UsersPage() {
   const [search, setSearch] = useState('')
@@ -33,16 +34,24 @@ export default function UsersPage() {
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [isPending, startTransition] = useTransition()
+  const retrySetupRef = useRef(false)
+  const retryCountRef = useRef(0)
+  const retryIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const eventListenerRef = useRef<((event: CustomEvent) => void) | null>(null)
+  const lastErrorRef = useRef<string | null>(null)
+  const getAccessToken = useSupabaseAccessToken()
 
   // Fetch users
   const fetchUsers = async () => {
     try {
       setLoading(true)
       setError(null)
+      const accessToken = await getAccessToken()
       const result = await getUsers({
         page,
         limit,
         search,
+        accessToken,
       })
 
       if (!result.success) {
@@ -66,6 +75,8 @@ export default function UsersPage() {
         setUsers(transformedUsers)
         setTotal(result.data.total)
         setTotalPages(result.data.totalPages)
+        // Success - error already cleared above
+        console.log('[UsersPage] ✅ Successfully fetched users:', result.data.total)
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch users')
@@ -75,8 +86,114 @@ export default function UsersPage() {
   }
 
   useEffect(() => {
+    // Initial fetch
     fetchUsers()
   }, [page, limit, search])
+
+  // Auto retry mechanism - setup once on mount
+  useEffect(() => {
+    const handleAuthComplete = () => {
+      console.log('[UsersPage] Client-side auth complete, retrying fetch...')
+      // Clear any existing retry interval
+      if (retryIntervalRef.current) {
+        clearInterval(retryIntervalRef.current)
+        retryIntervalRef.current = null
+      }
+      // Reset retry count
+      retryCountRef.current = 0
+      // Immediate retry after auth complete
+      setTimeout(() => {
+        fetchUsers()
+      }, 300)
+    }
+
+    // Store event listener ref for cleanup
+    eventListenerRef.current = handleAuthComplete as any
+
+    // Listen for auth complete event (only setup once)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('admin-auth-complete', eventListenerRef.current)
+    }
+
+    return () => {
+      if (typeof window !== 'undefined' && eventListenerRef.current) {
+        window.removeEventListener('admin-auth-complete', eventListenerRef.current)
+        eventListenerRef.current = null
+      }
+      if (retryIntervalRef.current) {
+        clearInterval(retryIntervalRef.current)
+        retryIntervalRef.current = null
+      }
+    }
+  }, []) // Only setup once on mount
+
+  // Handle Unauthorized error with retry
+  useEffect(() => {
+    const currentError = error || null
+    
+    // Only setup retry if we have Unauthorized error AND haven't setup yet
+    if (!currentError || !currentError.includes('Unauthorized')) {
+      // Clear any existing retry if error is cleared
+      if (retryIntervalRef.current) {
+        clearInterval(retryIntervalRef.current)
+        retryIntervalRef.current = null
+      }
+      retrySetupRef.current = false
+      retryCountRef.current = 0
+      lastErrorRef.current = currentError
+      return
+    }
+
+    // Prevent re-setup if error is the same and already setup
+    if (lastErrorRef.current === currentError && (retrySetupRef.current || retryIntervalRef.current)) {
+      return
+    }
+
+    // Prevent multiple setups - check both refs
+    if (retrySetupRef.current || retryIntervalRef.current) {
+      return
+    }
+
+    // Mark as setup to prevent multiple setups
+    retrySetupRef.current = true
+    retryCountRef.current = 0
+    lastErrorRef.current = currentError
+
+    const maxRetries = 5
+
+    console.log('[UsersPage] Unauthorized error detected, starting auto-retry...')
+    
+    const doRetry = async () => {
+      // Check if interval still exists (might be cleared)
+      if (!retryIntervalRef.current) return
+      
+      retryCountRef.current++
+      console.log(`[UsersPage] Auto-retry attempt ${retryCountRef.current}/${maxRetries}...`)
+      
+      try {
+        await fetchUsers()
+      } catch (err) {
+        console.error('[UsersPage] Retry error:', err)
+      }
+      
+      if (retryCountRef.current >= maxRetries) {
+        if (retryIntervalRef.current) {
+          clearInterval(retryIntervalRef.current)
+          retryIntervalRef.current = null
+        }
+        retrySetupRef.current = false
+        console.error('[UsersPage] Max retry attempts reached')
+      }
+    }
+    
+    // First retry immediately
+    doRetry()
+    
+    // Then retry every 1 second
+    retryIntervalRef.current = setInterval(doRetry, 1000)
+
+    // No cleanup here - cleanup is handled by the check above
+  }, [error]) // Only depend on error
 
   const handleEdit = (user: User) => {
     setEditingUser(user)
@@ -90,7 +207,8 @@ export default function UsersPage() {
 
     startTransition(async () => {
       try {
-        const result = await deleteUser({ id })
+        const accessToken = await getAccessToken()
+        const result = await deleteUser({ id }, { accessToken })
 
         if (!result.success) {
           setError(result.error || 'Failed to delete user')
@@ -116,7 +234,8 @@ export default function UsersPage() {
   }
 
   const handleCreate = async (userData: any) => {
-    const result = await createUser(userData)
+    const accessToken = await getAccessToken()
+    const result = await createUser(userData, { accessToken })
     if (!result.success) {
       throw new Error(result.error || 'Failed to create user')
     }
@@ -124,7 +243,8 @@ export default function UsersPage() {
   }
 
   const handleUpdate = async (userData: any) => {
-    const result = await updateUser(userData)
+    const accessToken = await getAccessToken()
+    const result = await updateUser(userData, { accessToken })
     if (!result.success) {
       throw new Error(result.error || 'Failed to update user')
     }

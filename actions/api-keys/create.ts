@@ -12,6 +12,7 @@ import { createAdminClient } from '@/lib/db/supabase-admin'
 import { auditLog } from '@/lib/audit/log'
 import { apiKeyCreateSchema } from '@/lib/validators/api-keys'
 import { revalidatePath } from 'next/cache'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Create a new API key
@@ -21,10 +22,10 @@ export async function createApiKey(values: {
   permissions?: Record<string, any>
   expires_at?: string | null
   enabled?: boolean
-}) {
+}, options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized || !authCheck.user) {
       return {
         success: false,

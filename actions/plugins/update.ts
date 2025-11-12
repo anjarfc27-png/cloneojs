@@ -11,6 +11,7 @@ import { createAdminClient } from '@/lib/db/supabase-admin'
 import { auditLog } from '@/lib/audit/log'
 import { pluginUpdateSchema } from '@/lib/validators/plugins'
 import { revalidatePath } from 'next/cache'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Update plugin (enable/disable and/or settings)
@@ -25,11 +26,12 @@ export async function updatePlugin(
       setting_value: string | number | boolean
       setting_type?: string
     }>
-  }
+  },
+  options: ServerActionAuthOptions = {},
 ) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized || !authCheck.user) {
       return {
         success: false,
@@ -142,7 +144,8 @@ export async function updatePlugin(
 /**
  * Create or update plugin settings (bulk upsert)
  */
-export async function createPluginSettings(values: {
+export async function createPluginSettings(
+  values: {
   plugin_name: string
   journal_id?: string | null
   settings: Array<{
@@ -150,10 +153,12 @@ export async function createPluginSettings(values: {
     setting_value: string | number | boolean
     setting_type?: string
   }>
-}) {
+},
+  options: ServerActionAuthOptions = {},
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized || !authCheck.user) {
       return {
         success: false,

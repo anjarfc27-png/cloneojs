@@ -11,6 +11,7 @@ import { X } from 'lucide-react'
 import { Issue } from './IssueTable'
 import { createIssue } from '@/actions/issues/create'
 import { updateIssue } from '@/actions/issues/update'
+import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
 interface Journal {
   id: string
@@ -24,6 +25,7 @@ interface IssueFormModalProps {
   issue?: Issue | null
   journals: Journal[]
   useServerActions?: boolean // Use Server Actions instead of API routes
+  apiPrefix?: string // Legacy prop (ignored when using Server Actions)
 }
 
 export default function IssueFormModal({
@@ -47,6 +49,7 @@ export default function IssueFormModal({
   })
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const { getAccessToken } = useAdminAuth()
 
   const isEdit = !!issue
 
@@ -136,13 +139,18 @@ export default function IssueFormModal({
 
         let result
 
+        const accessToken = await getAccessToken()
+
         if (isEdit && issue) {
-          result = await updateIssue({
-            id: issue.id,
-            ...payload,
-          })
+          result = await updateIssue(
+            {
+              id: issue.id,
+              ...payload,
+            },
+            { accessToken }
+          )
         } else {
-          result = await createIssue(payload)
+          result = await createIssue(payload, { accessToken })
         }
 
         if (!result.success) {

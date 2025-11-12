@@ -12,14 +12,18 @@ import { auditLog, logUserAction } from '@/lib/audit/log'
 import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { userCreateSchema } from '@/lib/validators/users'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Create a new user
  */
-export async function createUser(values: z.infer<typeof userCreateSchema>) {
+export async function createUser(
+  values: z.infer<typeof userCreateSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

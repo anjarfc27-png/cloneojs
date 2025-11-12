@@ -13,14 +13,18 @@ import { sanitizeHTML } from '@/lib/security/sanitize-html'
 import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { journalUpdateSchema, journalStatusSchema } from '@/lib/validators/journals'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Update a journal
  */
-export async function updateJournal(values: z.infer<typeof journalUpdateSchema>) {
+export async function updateJournal(
+  values: z.infer<typeof journalUpdateSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -211,10 +215,13 @@ export async function updateJournal(values: z.infer<typeof journalUpdateSchema>)
 /**
  * Update journal status
  */
-export async function updateJournalStatus(values: z.infer<typeof journalStatusSchema>) {
+export async function updateJournalStatus(
+  values: z.infer<typeof journalStatusSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

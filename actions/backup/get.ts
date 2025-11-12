@@ -8,6 +8,7 @@
 
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/lib/db/supabase-admin'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 export interface Backup {
   id: string
@@ -32,10 +33,10 @@ export interface BackupInfo {
 /**
  * Get backup history and status
  */
-export async function getBackups() {
+export async function getBackups(options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

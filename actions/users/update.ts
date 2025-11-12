@@ -12,14 +12,18 @@ import { auditLog, logUserAction } from '@/lib/audit/log'
 import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { userUpdateSchema, userPasswordResetSchema } from '@/lib/validators/users'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Update a user
  */
-export async function updateUser(values: z.infer<typeof userUpdateSchema>) {
+export async function updateUser(
+  values: z.infer<typeof userUpdateSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -155,10 +159,13 @@ export async function updateUser(values: z.infer<typeof userUpdateSchema>) {
 /**
  * Reset user password
  */
-export async function resetUserPassword(values: z.infer<typeof userPasswordResetSchema>) {
+export async function resetUserPassword(
+  values: z.infer<typeof userPasswordResetSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

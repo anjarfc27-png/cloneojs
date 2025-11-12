@@ -12,14 +12,18 @@ import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { activityLogCleanupSchema } from '@/lib/validators/activity-logs'
 import { z } from 'zod'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Cleanup old activity logs
  */
-export async function cleanupActivityLogs(values: z.infer<typeof activityLogCleanupSchema>) {
+export async function cleanupActivityLogs(
+  values: z.infer<typeof activityLogCleanupSchema>,
+  options: ServerActionAuthOptions = {},
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

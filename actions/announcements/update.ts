@@ -8,19 +8,23 @@
 
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/db/supabase-admin'
-import { auditLog, logSettingsAction } from '@/lib/audit/log'
+import { logSettingsAction } from '@/lib/audit/log'
 import { sanitizeHTML } from '@/lib/security/sanitize-html'
 import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { announcementUpdateSchema, announcementStatusSchema } from '@/lib/validators/announcements'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Update an announcement
  */
-export async function updateAnnouncement(values: z.infer<typeof announcementUpdateSchema>) {
+export async function updateAnnouncement(
+  values: z.infer<typeof announcementUpdateSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -144,10 +148,13 @@ export async function updateAnnouncement(values: z.infer<typeof announcementUpda
 /**
  * Update announcement status (enabled/disabled)
  */
-export async function updateAnnouncementStatus(values: z.infer<typeof announcementStatusSchema>) {
+export async function updateAnnouncementStatus(
+  values: z.infer<typeof announcementStatusSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

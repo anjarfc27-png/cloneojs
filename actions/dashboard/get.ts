@@ -8,6 +8,7 @@
 
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/lib/db/supabase-admin'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 export interface DashboardStats {
   totalUsers: number
@@ -35,9 +36,9 @@ export interface Activity {
 /**
  * Get dashboard statistics
  */
-export async function getDashboardStats(): Promise<DashboardStats> {
+export async function getDashboardStats(options: ServerActionAuthOptions = {}): Promise<DashboardStats> {
   try {
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       throw new Error('Unauthorized')
     }
@@ -124,9 +125,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 /**
  * Get recent activities
  */
-export async function getRecentActivities(limit: number = 10): Promise<Activity[]> {
+export async function getRecentActivities(limit: number = 10, options: ServerActionAuthOptions = {}): Promise<Activity[]> {
   try {
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return []
     }

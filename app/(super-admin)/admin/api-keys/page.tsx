@@ -7,7 +7,7 @@
 'use client'
 
 import { useState, useEffect, useTransition } from 'react'
-import { Plus, Edit, Trash2, Copy, RefreshCw, Key, Eye, EyeOff } from 'lucide-react'
+import { Plus, Copy, Key, Eye, EyeOff } from 'lucide-react'
 import ContentCard from '@/components/shared/ContentCard'
 import ErrorAlert from '@/components/shared/ErrorAlert'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
@@ -17,6 +17,7 @@ import { createApiKey } from '@/actions/api-keys/create'
 import { updateApiKey } from '@/actions/api-keys/update'
 import { deleteApiKey } from '@/actions/api-keys/delete'
 import { regenerateApiKey } from '@/actions/api-keys/regenerate'
+import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
 export default function ApiKeysPage() {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
@@ -27,6 +28,7 @@ export default function ApiKeysPage() {
   const [newKey, setNewKey] = useState<string | null>(null)
   const [showKeys, setShowKeys] = useState<Set<string>>(new Set())
   const [isPending, startTransition] = useTransition()
+  const { getAccessToken } = useAdminAuth()
 
   useEffect(() => {
     fetchApiKeys()
@@ -36,7 +38,8 @@ export default function ApiKeysPage() {
     try {
       setLoading(true)
       setError(null)
-      const result = await getApiKeys()
+      const accessToken = await getAccessToken()
+      const result = await getApiKeys({ accessToken })
 
       if (!result.success) {
         setError(result.error || 'Failed to fetch API keys')
@@ -72,7 +75,8 @@ export default function ApiKeysPage() {
 
     startTransition(async () => {
       try {
-        const result = await deleteApiKey(id)
+        const accessToken = await getAccessToken()
+        const result = await deleteApiKey(id, { accessToken })
 
         if (!result.success) {
           setError(result.error || 'Failed to delete API key')
@@ -93,7 +97,8 @@ export default function ApiKeysPage() {
 
     startTransition(async () => {
       try {
-        const result = await regenerateApiKey(id)
+        const accessToken = await getAccessToken()
+        const result = await regenerateApiKey(id, { accessToken })
 
         if (!result.success) {
           setError(result.error || 'Failed to regenerate API key')
@@ -331,6 +336,7 @@ function ApiKeyModal({ apiKey, onClose, onSuccess }: ApiKeyModalProps) {
   })
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const { getAccessToken } = useAdminAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -338,11 +344,12 @@ function ApiKeyModal({ apiKey, onClose, onSuccess }: ApiKeyModalProps) {
 
     startTransition(async () => {
       try {
+        const accessToken = await getAccessToken()
         if (apiKey) {
           const result = await updateApiKey(apiKey.id, {
             ...formData,
             expires_at: formData.expires_at || null,
-          })
+          }, { accessToken })
 
           if (!result.success) {
             setError(result.error || 'Failed to update API key')
@@ -357,7 +364,7 @@ function ApiKeyModal({ apiKey, onClose, onSuccess }: ApiKeyModalProps) {
           const result = await createApiKey({
             ...formData,
             expires_at: formData.expires_at || null,
-          })
+          }, { accessToken })
 
           if (!result.success) {
             setError(result.error || 'Failed to create API key')

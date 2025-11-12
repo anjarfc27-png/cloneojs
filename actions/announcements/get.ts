@@ -8,6 +8,7 @@
 
 import { createAdminClient } from '@/lib/db/supabase-admin'
 import { checkSuperAdmin } from '@/lib/admin/auth'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 export interface GetAnnouncementsParams {
   page?: number
@@ -34,10 +35,13 @@ export interface AnnouncementWithRelations {
 /**
  * Get all announcements with pagination and search
  */
-export async function getAnnouncements(params: GetAnnouncementsParams = {}) {
+export async function getAnnouncements(
+  params: GetAnnouncementsParams = {},
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -148,10 +152,13 @@ export async function getAnnouncements(params: GetAnnouncementsParams = {}) {
 /**
  * Get a single announcement by ID
  */
-export async function getAnnouncementById(announcementId: string) {
+export async function getAnnouncementById(
+  announcementId: string,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

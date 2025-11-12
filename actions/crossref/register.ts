@@ -13,17 +13,21 @@ import { doiRegistrationSchema } from '@/lib/validators/crossref'
 import { createCrossrefClient } from '@/lib/crossref/client'
 import { articleToCrossrefData } from '@/lib/crossref/utils'
 import { revalidatePath } from 'next/cache'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 /**
  * Register DOI with Crossref
  */
-export async function registerDOI(values: {
+export async function registerDOI(
+  values: {
   article_id: string
   doi?: string
-}) {
+},
+  options: ServerActionAuthOptions = {},
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized || !authCheck.user) {
       return {
         success: false,

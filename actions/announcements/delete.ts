@@ -7,10 +7,11 @@
 'use server'
 
 import { createAdminClient } from '@/lib/db/supabase-admin'
-import { auditLog, logSettingsAction } from '@/lib/audit/log'
+import { logSettingsAction } from '@/lib/audit/log'
 import { revalidatePath } from 'next/cache'
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { z } from 'zod'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 const deleteAnnouncementSchema = z.object({
   id: z.string().uuid('Invalid announcement ID'),
@@ -19,10 +20,13 @@ const deleteAnnouncementSchema = z.object({
 /**
  * Delete an announcement
  */
-export async function deleteAnnouncement(values: z.infer<typeof deleteAnnouncementSchema>) {
+export async function deleteAnnouncement(
+  values: z.infer<typeof deleteAnnouncementSchema>,
+  options: ServerActionAuthOptions = {}
+) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,

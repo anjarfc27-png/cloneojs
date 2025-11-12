@@ -8,6 +8,7 @@
 
 import { checkSuperAdmin } from '@/lib/admin/auth'
 import { createAdminClient } from '@/lib/db/supabase-admin'
+import { ServerActionAuthOptions } from '@/lib/admin/types'
 
 export interface ApiKey {
   id: string
@@ -25,10 +26,10 @@ export interface ApiKey {
 /**
  * Get all API keys
  */
-export async function getApiKeys() {
+export async function getApiKeys(options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
@@ -78,10 +79,10 @@ export async function getApiKeys() {
 /**
  * Get single API key by ID
  */
-export async function getApiKeyById(id: string) {
+export async function getApiKeyById(id: string, options: ServerActionAuthOptions = {}) {
   try {
     // Check authorization
-    const authCheck = await checkSuperAdmin()
+    const authCheck = await checkSuperAdmin(options.accessToken)
     if (!authCheck.authorized) {
       return {
         success: false,
